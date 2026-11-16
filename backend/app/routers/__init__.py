@@ -16,6 +16,7 @@ from app.routers import latency as router_latency
 from app.routers import jobops as router_jobops
 from app.routers import sink as router_sink
 from app.routers import schema as router_schema
+from app.routers import backfill as router_backfill
 from app.routers import watermark as router_watermark
 from app.routers import parallel as router_parallel
 from app.routers import metric as router_metric
@@ -23,4 +24,4 @@ from app.routers import alarm as router_alarm
 from app.routers import udf as router_udf
 from app.routers import log as router_log
 
-ROUTERS = [router_streamin, router_operator, router_window, router_state, router_checkpoint, router_backpress, router_latency, router_jobops, router_sink, router_schema, router_watermark, router_parallel, router_metric, router_alarm, router_udf, router_log]
+ROUTERS = [router_streamin, router_operator, router_window, router_state, router_checkpoint, router_backpress, router_latency, router_jobops, router_sink, router_schema, router_backfill, router_watermark, router_parallel, router_metric, router_alarm, router_udf, router_log]

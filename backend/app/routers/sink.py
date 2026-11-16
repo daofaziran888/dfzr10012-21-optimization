@@ -39,6 +39,24 @@ def get_entry(entry_id: int) -> dict:
     return entry
 
 
+@router.get("/{entry_id}/backfills")
+def list_backfills(entry_id: int) -> dict[str, Any]:
+    """输出端消费侧：读取该输出配置共享的字段回填结果，用记录编号关联。"""
+    if service.get_entry(entry_id) is None:
+        raise HTTPException(status_code=404, detail=f"输出配置 {entry_id} 不存在或已归档")
+    items = service.list_backfills(entry_id)
+    return {"sink_id": entry_id, "total": len(items), "items": items}
+
+
+@router.get("/backfills/record/{record_no}", response_model=dict)
+def get_backfill_by_record_no(record_no: str) -> dict[str, Any]:
+    """输出端消费侧：按记录编号关联同一份字段回填结果。"""
+    entry = service.get_backfill_by_record_no(record_no)
+    if entry is None:
+        raise HTTPException(status_code=404, detail=f"字段回填结果 {record_no} 不存在或已归档")
+    return entry
+
+
 @router.post("", response_model=ActionResult)
 def create_entry(payload: EntryPayload) -> ActionResult:
     """登记一条输出配置，缺字段时说明原因而不是静默丢弃。"""

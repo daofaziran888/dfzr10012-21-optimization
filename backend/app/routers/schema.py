@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/schema", tags=["流数据格式定义"])
 
 service = SchemaService()
 
-LIST_FIELDS = ["定义编号", "流名称", "字段名称", "字段类型", "默认值", "可空标识", "格式版本", "定义状态"]
+LIST_FIELDS = ["定义编号", "流名称", "字段名称", "字段类型", "存储类型", "默认值", "可空标识", "格式版本", "定义状态"]
 STATUSES = ["草稿", "已发布", "已废弃", "已冻结"]
 
 

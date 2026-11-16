@@ -40,12 +40,15 @@ const stats = [
 ]
 
 type Row = Record<string, string | number | null>
+type BackfillRow = Record<string, string | number | boolean | null>
 
 export default function SinkView() {
   const [rows, setRows] = useState<Row[]>([])
   const [total, setTotal] = useState(0)
   const [errorMessage, setErrorMessage] = useState('')
   const [filters, setFilters] = useState<Record<string, string>>({})
+  const [sharedRows, setSharedRows] = useState<BackfillRow[]>([])
+  const [sharedSink, setSharedSink] = useState('')
   const filterFields = useMemo(() => columns.slice(0, 3), [])
 
   const reload = useCallback(async () => {
@@ -67,6 +70,21 @@ export default function SinkView() {
   useEffect(() => {
     void reload()
   }, [reload])
+
+  async function loadSharedBackfills(row: Row) {
+    setErrorMessage('')
+    try {
+      const response = await request(`${ENDPOINT}/${row.id}/backfills`)
+      if (!response.ok) {
+        throw new Error('共享字段回填结果读取失败')
+      }
+      const payload = await response.json()
+      setSharedRows(payload.items ?? [])
+      setSharedSink(String(row['配置编号'] ?? row.id))
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '共享字段回填结果读取失败')
+    }
+  }
 
   async function runAction(action: string, row: Row) {
     setErrorMessage('')
@@ -142,6 +160,9 @@ export default function SinkView() {
                     {action}
                   </button>
                 ))}
+                <button className="link" type="button" onClick={() => void loadSharedBackfills(row)}>
+                  共享回填结果
+                </button>
               </td>
             </tr>
           ))}
@@ -152,6 +173,45 @@ export default function SinkView() {
           )}
         </tbody>
       </table>
+
+      {sharedSink && (
+        <section className="page" style={{ marginTop: 16 }}>
+          <header className="page-head">
+            <div>
+              <h3>{sharedSink} 共享的字段回填结果</h3>
+              <p className="page-desc">输出端消费侧按记录编号关联同一份回填结果，不另建版本台账；失败列保留旧映射。</p>
+            </div>
+            <div className="page-actions">
+              <button className="btn ghost" type="button" onClick={() => { setSharedRows([]); setSharedSink('') }}>
+                关闭
+              </button>
+            </div>
+          </header>
+          <table className="data-table">
+            <thead>
+              <tr>
+                {['记录编号', '回填批次', '字段名称', '原存储类型', '原默认值', '目标版本', '升级场景', '兼容判定', '状态'].map((column) => (
+                  <th key={column}>{column}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sharedRows.map((row) => (
+                <tr key={String(row.id)}>
+                  {['记录编号', '回填批次', '字段名称', '原存储类型', '原默认值', '目标版本', '升级场景', '兼容判定', 'status'].map((column) => (
+                    <td key={column}>{String(row[column] ?? '—')}</td>
+                  ))}
+                </tr>
+              ))}
+              {sharedRows.length === 0 && (
+                <tr>
+                  <td className="empty-state" colSpan={9}>该输出配置暂无共享回填结果</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       <footer className="page-foot">
         <span>共 {total} 条流数据输出端记录</span>

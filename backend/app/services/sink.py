@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.services.backfill import BackfillService
 from app.store import store
 
 MODULE = "sink"
@@ -10,6 +11,9 @@ REQUIRED_FIELDS = ["配置编号", "输出类型", "目标地址"]
 STATUS_ORDER = ["草稿", "已启用", "已暂停", "已关闭"]
 ACTION_RULES = {"启用输出": "草稿", "暂停输出": "已启用", "关闭输出": "已暂停"}
 NEGATIVE_ACTIONS = []
+
+# 输出端消费侧只读取共享的字段回填结果，不再自行维护版本判定
+backfill_service = BackfillService()
 
 
 class SinkService:
@@ -32,6 +36,14 @@ class SinkService:
 
     def get_entry(self, entry_id: int) -> dict[str, Any] | None:
         return store.find(MODULE, entry_id)
+
+    def list_backfills(self, entry_id: int) -> list[dict[str, Any]]:
+        """输出端消费侧：按输出配置读取同一份字段回填结果（记录编号关联）。"""
+        return backfill_service.list_by_sink(entry_id)
+
+    def get_backfill_by_record_no(self, record_no: str) -> dict[str, Any] | None:
+        """输出端消费侧：按记录编号关联共享回填结果，不另建版本台账。"""
+        return backfill_service.find_by_record_no(record_no)
 
     def create_entry(self, values: dict[str, Any]) -> tuple[dict[str, Any] | None, list[str]]:
         missing = [field for field in REQUIRED_FIELDS if not str(values.get(field) or "").strip()]
